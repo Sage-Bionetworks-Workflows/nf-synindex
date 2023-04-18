@@ -75,28 +75,28 @@ process get_user_id {
 }
 
 
-process update_owner {
+// process update_owner {
   
-  label 'aws'
+//   label 'aws'
 
-  input:
-  val user_id   from ch_user_id
-  val s3_prefix from s3_prefix
+//   input:
+//   val user_id   from ch_user_id
+//   val s3_prefix from s3_prefix
 
-  output:
-  val true into ch_update_owner_done
+//   output:
+//   val true into ch_update_owner_done
 
-  script:
-  """
-  ( \
-     ( aws s3 cp ${s3_prefix}/owner.txt - 2>/dev/null || true ); \
-      echo $user_id \
-  ) \
-  | sort -u \
-  | aws s3 cp - ${s3_prefix}/owner.txt
-  """
+//   script:
+//   """
+//   ( \
+//      ( aws s3 cp ${s3_prefix}/owner.txt - 2>/dev/null || true ); \
+//       echo $user_id \
+//   ) \
+//   | sort -u \
+//   | aws s3 cp - ${s3_prefix}/owner.txt
+//   """
 
-}
+// }
 
 
 process register_bucket {
@@ -111,7 +111,7 @@ process register_bucket {
   val   bucket     from bucket_name
   val   base_key   from base_key
   file  syn_config from ch_synapse_config
-  val   flag       from ch_update_owner_done
+  // val   flag       from ch_update_owner_done
 
   output:
   stdout ch_storage_id
