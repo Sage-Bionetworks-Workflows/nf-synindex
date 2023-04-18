@@ -49,30 +49,30 @@ publish_dir = "${s3_prefix}/synindex/under-${params.parent_id}/"
 ========================================================================================
 */
 
-process get_user_id {
+// process get_user_id {
   
-  label 'synapse'
+//   label 'synapse'
 
-  cache false
+//   cache false
 
-  secret 'SYNAPSE_AUTH_TOKEN'
+//   secret 'SYNAPSE_AUTH_TOKEN'
 
-  afterScript "rm -f ${syn_config}"
+//   afterScript "rm -f ${syn_config}"
 
-  input:
-  file  syn_config from ch_synapse_config
+//   input:
+//   file  syn_config from ch_synapse_config
 
-  output:
-  stdout ch_user_id
+//   output:
+//   stdout ch_user_id
 
-  script:
-  config_cli_arg = params.synapse_config ? "--config ${syn_config}" : ""
-  """
-  get_user_id.py \
-  ${config_cli_arg}
-  """
+//   script:
+//   config_cli_arg = params.synapse_config ? "--config ${syn_config}" : ""
+//   """
+//   get_user_id.py \
+//   ${config_cli_arg}
+//   """
 
-}
+// }
 
 
 // process update_owner {
