@@ -7,8 +7,8 @@
 ========================================================================================
 */
 
-// Ensure DSL1
-nextflow.enable.dsl = 1
+// Ensure DSL2
+nextflow.enable.dsl = 2
 
 // Default values
 params.s3_prefix = false
@@ -60,10 +60,10 @@ process get_user_id {
   afterScript "rm -f ${syn_config}"
 
   input:
-  file  syn_config from ch_synapse_config
+    path syn_config
 
   output:
-  stdout ch_user_id
+    stdout
 
   script:
   config_cli_arg = params.synapse_config ? "--config ${syn_config}" : ""
@@ -80,11 +80,11 @@ process update_owner {
   label 'aws'
 
   input:
-  val user_id   from ch_user_id
-  val s3_prefix from s3_prefix
+    val user_id
+    val s3_prefix
 
   output:
-  val true into ch_update_owner_done
+    val true
 
   script:
   """
@@ -108,13 +108,13 @@ process register_bucket {
   afterScript "rm -f ${syn_config}"
 
   input:
-  val   bucket     from bucket_name
-  val   base_key   from base_key
-  file  syn_config from ch_synapse_config
-  val   flag       from ch_update_owner_done
+    val bucket
+    val base_key
+    path syn_config
+    val flag
 
   output:
-  stdout ch_storage_id
+    stdout ch_storage_id
 
   script:
   config_cli_arg = params.synapse_config ? "--config ${syn_config}" : ""
@@ -133,11 +133,11 @@ process list_objects {
   label 'aws'
 
   input:
-  val s3_prefix from s3_prefix
-  val bucket    from bucket_name
+    val s3_prefix
+    val bucket
 
   output:
-  path 'objects.txt'    into ch_objects
+    path 'objects.txt'
 
   script:
   """
@@ -163,13 +163,13 @@ process synapse_mirror {
   publishDir publish_dir, mode: 'copy'
 
   input:
-  path  objects    from ch_objects
-  val   s3_prefix  from s3_prefix
-  val   parent_id  from params.parent_id
-  file  syn_config from ch_synapse_config
+    path  objects    from ch_objects
+    val   s3_prefix  from s3_prefix
+    val   parent_id  from params.parent_id
+    file  syn_config from ch_synapse_config
 
   output:
-  path  'parent_ids.csv'    into ch_parent_ids_csv
+    path 'parent_ids.csv'
 
   script:
   config_cli_arg = params.synapse_config ? "--config ${syn_config}" : ""
@@ -184,15 +184,6 @@ process synapse_mirror {
 
 }
 
-
-// Parse list of object URIs and their Synapse parents
-ch_parent_ids_csv
-  .text
-  .splitCsv()
-  .map { row -> [ row[0], file(row[0]), row[1] ] }
-  .set { ch_parent_ids }
-
-
 process synapse_index {
   
   label 'synapse'
@@ -202,12 +193,12 @@ process synapse_index {
   afterScript "rm -f ${syn_config}"
 
   input:
-  tuple val(uri), file(object), val(parent_id) from ch_parent_ids
-  val   storage_id                             from ch_storage_id
-  file  syn_config                             from ch_synapse_config
+  tuple val(uri), file(object), val(parent_id)
+  val storage_id
+  path syn_config
 
   output:
-  stdout ch_file_ids
+    stdout
 
   script:
   config_cli_arg = params.synapse_config ? "--config ${syn_config}" : ""
@@ -223,5 +214,22 @@ process synapse_index {
 }
 
 
-ch_file_ids
-  .collectFile(name: "file_ids.csv", storeDir: publish_dir, newLine: true)
+workflow {
+  get_user_id(ch_synapse_config)
+  update_owner(get_user_id.out, s3_prefix)
+  register_bucket(bucket_name, base_key, ch_synapse_config, update_owner.out)
+  list_objects(s3_prefix, bucket_name)
+  synapse_mirror(ch_objects, s3_prefix, params.parent_id, ch_synapse_config)
+
+  // Parse list of object URIs and their Synapse parents
+  synapse_mirror.out
+    .text
+    .splitCsv()
+    .map { row -> [ row[0], file(row[0]), row[1] ] }
+    .set { ch_parent_ids }
+  synapse_index(ch_parent_ids, ch_storage_id, ch_synapse_config)
+
+  synapse_index
+    .collectFile(name: "file_ids.csv", storeDir: publish_dir, newLine: true)
+
+}
