@@ -13,7 +13,6 @@ nextflow.enable.dsl = 2
 // Default values
 params.s3_prefix = false
 params.parent_id = false
-params.synapse_config = false
 
 if ( !params.s3_prefix ) {
   exit 1, "Parameter 'params.s3_prefix' is required!\n"
@@ -41,8 +40,6 @@ if ( matches.size() == 0 ) {
 if ( !params.parent_id ==~ 'syn[0-9]+' ) {
   exit 1, "Parameter 'params.parent_id' must be the Synapse ID of a folder (e.g., 'syn98765432')!\n"
 }
-
-ch_synapse_config = params.synapse_config ? Channel.value( file(params.synapse_config) ) : "null"
 
 publish_dir = "${s3_prefix}/synindex/under-${params.parent_id}/"
 
