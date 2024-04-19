@@ -1,5 +1,7 @@
 # nf-synindex: Index S3 Objects in Synapse
 
+**This repository has been archived. Its functionality has been added to [`nf-synapse`](https://github.com/Sage-Bionetworks-Workflows/nf-synapse). We recommend users switch to using `nf-synapse` for all file staging and indexing needs.**
+
 ## Purpose
 
 The purpose of this Nextflow workflow is to automate the process of indexing S3 objects in Synapse. These S3 objects are typically the output files from a general-purpose (_e.g._ nf-core) workflow that doesn't contain Synapse-specific steps for uploading or indexing outputs. This workflow is intended to be run after other data processing workflows and assumes that the S3 bucket is [configured](https://help.synapse.org/docs/Custom-Storage-Locations.2048327803.html) for Synapse.
